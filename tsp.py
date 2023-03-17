@@ -6,7 +6,7 @@ data = [eval(i) for i in data]
 
 # 도시 좌표 데이터 만들기
 #city_count = data[0]
-city_count = 10
+city_count = 20
 city_coords = []
 for i in range(1, len(data), 2):
     city_coords.append((data[i], data[i + 1]))
@@ -72,7 +72,7 @@ import threading
 window = tk.Tk()
 canvas = tk.Canvas(window, width = 600, height = 600, bg = "white")
 canvas.pack(expand = 1, fill = tk.BOTH)
-btn = tk.Button(window, text = "Start", command = lambda : threading.Thread(target=FindShortestPath()).start())
+btn = tk.Button(window, text="Start", command=lambda: threading.Thread(target=FindShortestPath).start())
 btn.pack(fill = tk.X)
 DrawTour(list(range(1, city_count)))
 

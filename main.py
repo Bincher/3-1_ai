@@ -1,11 +1,12 @@
 """
-2주차 - 실습 : 숫자 데이터 쓰기 및 읽기
+2주차 - 과제 : 순회 외판원 문제
 """
 
 import math
 import itertools
 import tkinter as tk
 import threading
+import time
 
 file = open("point20.txt", "r", encoding="UTF-8")
 numbers = file.read().split() #파일 내용을 공백단위로 나눠서 저장
@@ -56,6 +57,8 @@ def GetTourDistance(path):
 #print(GetTourDistance([1,2,3,4]))
 
 def FindShortestPath():
+    start = time.time()
+    math.factorial(100000)
     # 최단 경로 찾기
     # itertools : 효울적인 반복을 위한 함수
 
@@ -63,28 +66,6 @@ def FindShortestPath():
     iter = itertools.permutations(range(1, city_count))
     min_tour_length = math.inf  # 최단시간값을 무한으로 설정
     shortest_path = None
-
-    print(iter)
-    for path in iter:
-        length = GetTourDistance(path)  # 총 거리 계산
-
-        if length < min_tour_length:  # 총 거리 계산이 최소값이 되도록
-            print(length, path)
-            min_tour_length = length
-            shortest_path = path
-            DrawTour([0] + list(path))  # canvas에 첫도시부터 순서대로 그리기
-            lb.config(text=length)
-
-    print("탐색 끝")
-def GetOptimalPath():
-    # 최단 경로 찾기
-    # itertools : 효울적인 반복을 위한 함수
-
-    # permutation : 반복 가능 개체 중에서 r개를 선택한 순열을 반환한 것
-    iter = itertools.permutations(range(1, city_count))
-    min_tour_length = math.inf  # 최단시간값을 무한으로 설정
-    shortest_path = None
-
 
     for path in iter:
         length = GetTourDistance(path)  # 총 거리 계산
@@ -95,26 +76,9 @@ def GetOptimalPath():
             shortest_path = path
             DrawTour([0] + list(path))  # canvas에 첫도시부터 순서대로 그리기
             lb.config(text=length)
-            break
-
     print("탐색 끝")
-"""
-def DrawFirstTour():
-    tour = list(range(city_count))
-    for i in tour:
-        x,y = cities[i]
-        if i == 0:
-            color = "red"
-        else:
-            color = "blue"
-        canvas.create_oval(x - 3, y - 3, x + 3, y + 3, fill = color)
-
-        if i == city_count - 1:
-            next_x, next_y = cities[0]
-        else:
-            next_x,next_y = cities[i + 1]
-        canvas.create_line(x, y, next_x, next_y)
-"""
+    end = time.time()
+    lb2.config(text=f"{end - start:.5f} sec")
 
 def DrawTour(path):
     canvas.delete(tk.ALL) #기존 그림 삭제
@@ -137,10 +101,12 @@ canvas = tk.Canvas(window, width = 600, height = 600, bg = "white")
 canvas.pack(expand = 1, fill = tk.BOTH)
 lb = tk.Label(window, text = 0)
 lb.pack(fill=tk.X)
-btn = tk.Button(window, text = "Start", command = lambda : threading.Thread(target=FindShortestPath()).start())
+lb2 = tk.Label(window, text = 0)
+lb2.pack(fill=tk.X)
+btn = tk.Button(window, text="Start", command=lambda: threading.Thread(target=FindShortestPath).start())
 btn.pack(fill=tk.X, side="right", expand=True)
-btn = tk.Button(window, text = "Step", command = lambda : threading.Thread(target=GetOptimalPath()).start())
-btn.pack(fill=tk.X, side="right", expand=True)
+btn2 = tk.Button(window, text = "Step")
+btn2.pack(fill=tk.X, side="right", expand=True)
 DrawTour(list(range(city_count))) #city_count만큼 도시 점 생성
 
 window.mainloop()
