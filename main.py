@@ -14,7 +14,7 @@ numbers = [eval(i) for i in numbers] #믄자열로 들어온 numbers를 eval로 
 print(numbers)
 
 #city_count = numbers[0]
-city_count = 8 #도시 개수
+city_count = 10 #도시 개수
 cities = [] #도시 좌표(x, y)
 
 for i in range(1, len(numbers), 2):
@@ -68,6 +68,8 @@ def FindShortestPath():
     shortest_path = None
 
     for path in iter:
+        end = time.time()
+        lb2.config(text=f"{end - start:.5f} sec")
         length = GetTourDistance(path)  # 총 거리 계산
 
         if length < min_tour_length:  # 총 거리 계산이 최소값이 되도록
@@ -76,8 +78,13 @@ def FindShortestPath():
             shortest_path = path
             DrawTour([0] + list(path))  # canvas에 첫도시부터 순서대로 그리기
             lb.config(text=length)
+
+        if (end - start >= 600):
+            lb2.config(text=f"{end - start:.5f} sec")
+            break
+
     print("탐색 끝")
-    end = time.time()
+
     lb2.config(text=f"{end - start:.5f} sec")
 
 def DrawTour(path):
