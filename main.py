@@ -4,20 +4,19 @@
 
 import math
 import itertools
-import tkinter as tk
 import threading
 import time
 
-file = open("point20.txt", "r", encoding="UTF-8")
+file = open("tsp299.txt", "r", encoding="UTF-8")
 numbers = file.read().split() #파일 내용을 공백단위로 나눠서 저장
 numbers = [eval(i) for i in numbers] #믄자열로 들어온 numbers를 eval로 int형으로 변환
-print(numbers)
+#print(numbers)
 
-#city_count = numbers[0]
-city_count = 10 #도시 개수
+city_count = numbers[0]
+#city_count = 15 #도시 개수
 cities = [] #도시 좌표(x, y)
 
-for i in range(1, len(numbers), 2):
+for i in range(2, len(numbers), 3):
     coord = (numbers[i], numbers[i+1]) #각 도시의 x축,y축를 튜플로 변환
     cities.append(coord) #각 도시의 좌표를 (x,y)형식으로 저장
 
@@ -30,7 +29,7 @@ def GetDistance(coord1, coord2): #두 도시간의 거리
 #행렬 생성(city_count * city_count)
 distance = [[0 for i in range(city_count)] for j in range(city_count)]
 
-for i in range(city_count - 1) :
+for i in range((city_count - 1)) :
     for j in range(i + 1, city_count) :
         distance[i][j] = GetDistance(cities[i], cities[j]) #i번째 x축과 j번째 y축을 얻어와 거리 계산
         distance[j][i] = distance[i][j] #행렬 밑부분
@@ -69,53 +68,18 @@ def FindShortestPath():
 
     for path in iter:
         end = time.time()
-        lb2.config(text=f"{end - start:.5f} sec")
         length = GetTourDistance(path)  # 총 거리 계산
 
         if length < min_tour_length:  # 총 거리 계산이 최소값이 되도록
             print(length, path)
             min_tour_length = length
             shortest_path = path
-            DrawTour([0] + list(path))  # canvas에 첫도시부터 순서대로 그리기
-            lb.config(text=length)
-
         if (end - start >= 600):
-            lb2.config(text=f"{end - start:.5f} sec")
+            print("시간 소요 : ", end - start, " sec")
+            print("거리 : ", int(length + 5))
             break
-
     print("탐색 끝")
+    print("시간 소요 : ",end - start," sec")
+    print("최단 거리 : ", int(length+5))
 
-    lb2.config(text=f"{end - start:.5f} sec")
-
-def DrawTour(path):
-    canvas.delete(tk.ALL) #기존 그림 삭제
-    for i in range(len(path)):
-        x, y = cities[path[i]] #경로
-        if path[i] == 0:
-            color = "red"
-        else:
-            color = "blue"
-        canvas.create_oval(x - 3, y - 3, x + 3, y + 3, fill=color)
-
-        if i == city_count - 1:
-            next_x, next_y = cities[0]
-        else:
-            next_x, next_y = cities[path[i + 1]]
-        canvas.create_line(x, y, next_x, next_y)
-
-window = tk.Tk()
-canvas = tk.Canvas(window, width = 600, height = 600, bg = "white")
-canvas.pack(expand = 1, fill = tk.BOTH)
-lb = tk.Label(window, text = 0)
-lb.pack(fill=tk.X)
-lb2 = tk.Label(window, text = 0)
-lb2.pack(fill=tk.X)
-btn = tk.Button(window, text="Start", command=lambda: threading.Thread(target=FindShortestPath).start())
-btn.pack(fill=tk.X, side="right", expand=True)
-btn2 = tk.Button(window, text = "Step")
-btn2.pack(fill=tk.X, side="right", expand=True)
-DrawTour(list(range(city_count))) #city_count만큼 도시 점 생성
-
-window.mainloop()
-
-
+FindShortestPath()
