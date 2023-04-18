@@ -1,85 +1,83 @@
-"""
-2주차 - 과제 : 순회 외판원 문제
-"""
-
+import random
+import copy
+import datetime
 import math
-import itertools
-import threading
-import time
 
-file = open("tsp299.txt", "r", encoding="UTF-8")
-numbers = file.read().split() #파일 내용을 공백단위로 나눠서 저장
-numbers = [eval(i) for i in numbers] #믄자열로 들어온 numbers를 eval로 int형으로 변환
-#print(numbers)
-
-city_count = numbers[0]
-#city_count = 15 #도시 개수
-cities = [] #도시 좌표(x, y)
-
-for i in range(2, len(numbers), 3):
-    coord = (numbers[i], numbers[i+1]) #각 도시의 x축,y축를 튜플로 변환
-    cities.append(coord) #각 도시의 좌표를 (x,y)형식으로 저장
-
-#print(cities)
-
-def GetDistance(coord1, coord2): #두 도시간의 거리
-    #첫번째 튜플의 x축과 y축, 두번째 튜플의 x축과 y축을 이용해 거리 계산
+def GetDistance(coord1, coord2):  # 두 도시간의 거리
+    # 첫번째 튜플의 x축과 y축, 두번째 튜플의 x축과 y축을 이용해 거리 계산
     return math.sqrt((coord1[0] - coord2[0]) ** 2 + (coord1[1] - coord2[1]) ** 2)
 
-#행렬 생성(city_count * city_count)
-distance = [[0 for i in range(city_count)] for j in range(city_count)]
+# One Max Problem : 20개의 변수(0 또는 1의 값을 가짐)들의 합을 최대화
+class Problem:
+    def __init__(self):
+        file = open("tsp299.txt", "r", encoding="UTF-8")
+        numbers = file.read().split()  # 파일 내용을 공백단위로 나눠서 저장
+        numbers = [eval(i) for i in numbers]  # 믄자열로 들어온 numbers를 eval로 int형으로 변환
 
-for i in range((city_count - 1)) :
-    for j in range(i + 1, city_count) :
-        distance[i][j] = GetDistance(cities[i], cities[j]) #i번째 x축과 j번째 y축을 얻어와 거리 계산
-        distance[j][i] = distance[i][j] #행렬 밑부분
-        # 추가설명 : city_count = 7일때를 가정
-        # 7*7행렬을 만들되, U부분과 D부분은 대칭되게 한다.
-        # 즉, U부분을 작성하고 D부분은 distance[j][i] = distance[i][j]를 해주면 대칭이 된다
-        # U부분은 i와 j는 두 도시들을 대표하는데, 만약 i와 j가 같은 도시이면 distance는 0이 된다.
-        # 이를 통해 i번째 도시와 j번째 도시의 거리는 행렬 [i][j]번째를 확인하면 된다.
+        city_count = numbers[0]
+        # city_count = 15 #도시 개수
+        cities = []  # 도시 좌표(x, y)
 
-#print(distance)
+        for i in range(2, len(numbers), 3):
+            coord = (numbers[i], numbers[i + 1])  # 각 도시의 x축,y축를 튜플로 변환
+            cities.append(coord)  # 각 도시의 좌표를 (x,y)형식으로 저장
 
-def GetTourDistance(path):
-    # 총 여행한 길이
-    dist = distance[0][path[0]] #전체 첫 도시와 매개변수의 첫 도시의 거리
+        # 행렬 생성(city_count * city_count)
+        distance = [[0 for i in range(city_count)] for j in range(city_count)]
 
-    #모든 도시를 순회했을때의 길이
-    for i in range(len(path) - 1):
-        dist += distance[path[i]][path[i + 1]] #두번째와 세번째, 세번째랑 네번째, ...
+        for i in range((city_count - 1)):
+            for j in range(i + 1, city_count):
+                distance[i][j] = GetDistance(cities[i], cities[j])  # i번째 x축과 j번째 y축을 얻어와 거리 계산
+                distance[j][i] = distance[i][j]  # 행렬 밑부분
 
-    dist += distance[path[-1]][0] #마지막도시와 다시 첫번째도시의 거리
-    return dist
+        self.n = city_count      # 20개의 변수 존재
+        self.max_exe_time = 600  # 최대 수행 시간 30초
+        self.distance = distance
+    def GetInitialSolution(self):
+        solution = list(range(self.n))
+        return solution, self.ObjectiveFunction(solution)
 
-#시작 도시를 제외한 처음부터 4번째까지의 도시의 거리
-#print(GetTourDistance([1,2,3,4]))
+    def GetANeighbor(self, state):
+        neighbor = copy.copy(state)
+        pos1 = random.randint(0, self.n - 1)
+        pos2 = random.randint(0, self.n - 1)
+        neighbor[pos1], neighbor[pos2] = neighbor[pos2], neighbor[pos1]
+        obj_value = self.ObjectiveFunction(neighbor)
 
-def FindShortestPath():
-    start = time.time()
-    math.factorial(100000)
-    # 최단 경로 찾기
-    # itertools : 효울적인 반복을 위한 함수
+        return neighbor, obj_value
 
-    # permutation : 반복 가능 개체 중에서 r개를 선택한 순열을 반환한 것
-    iter = itertools.permutations(range(1, city_count))
-    min_tour_length = math.inf  # 최단시간값을 무한으로 설정
-    shortest_path = None
+    def ObjectiveFunction(self, state):
+        cost = 0
+        for i in range(self.n):
+            cost += self.distance[state[i]][state[(i + 1) % self.n]]
+        return cost
 
-    for path in iter:
-        end = time.time()
-        length = GetTourDistance(path)  # 총 거리 계산
+problem = Problem()
 
-        if length < min_tour_length:  # 총 거리 계산이 최소값이 되도록
-            print(length, path)
-            min_tour_length = length
-            shortest_path = path
-        if (end - start >= 600):
-            print("시간 소요 : ", end - start, " sec")
-            print("거리 : ", int(length + 5))
+# start_time으로부터 max_time이 경과하였는지 검사
+def TimeOver(start_time, max_time):
+    elapsed = (datetime.datetime.now() - start_time).total_seconds()
+    return True if elapsed >= max_time else False
+
+# First-choice Hill-climbing Search
+def FirstChoiceHillClimbingSearch():
+    current, cur_obj_value = problem.GetInitialSolution()
+    print(">>> 초기해 목적 함수값 :", cur_obj_value)
+    print(">>> 초기해 :", current)
+    start_time = datetime.datetime.now()        # 탐색 시작 시간 저장
+
+    while True:
+        neighbor, neigbor_obj_value = problem.GetANeighbor(current)
+        if neigbor_obj_value < cur_obj_value:
+            current, cur_obj_value = neighbor, neigbor_obj_value
+            print(cur_obj_value)
+
+        if TimeOver(start_time, problem.max_exe_time):
+            print("실행 시간 초과")
             break
-    print("탐색 끝")
-    print("시간 소요 : ",end - start," sec")
-    print("최단 거리 : ", int(length+5))
 
-FindShortestPath()
+    return current, cur_obj_value
+
+best_solution, best_obj_value = FirstChoiceHillClimbingSearch()
+print(">>> Best 목적 함수값 :", int(best_obj_value+5))
+print(">>> Best 해 :", best_solution)
