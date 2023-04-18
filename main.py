@@ -1,106 +1,72 @@
-import random
-import copy
-import datetime
+from pyevolve import *
 import math
 
-def GetDistance(coord1, coord2):  # 두 도시간의 거리
-    return int(math.sqrt((coord1[0] - coord2[0]) ** 2 + (coord1[1] - coord2[1]) ** 2)+0.5)
-
-# One Max Problem : 20개의 변수(0 또는 1의 값을 가짐)들의 합을 최대화
 class Problem:
     def __init__(self):
-        file = open("tsp299.txt", "r", encoding="UTF-8")
-        numbers = file.read().split()  # 파일 내용을 공백단위로 나눠서 저장
-        numbers = [eval(i) for i in numbers]  # 믄자열로 들어온 numbers를 eval로 int형으로 변환
+        infile = open("tsp299.txt", "r")
+        data = infile.read().split()
+        data = [eval(x) for x in data]
+        self.city_count = data[0]  # 도시가 5개라면 도시 번호는 [0, 1, 2, 3, 4]
+        data.pop(0)
+        pos_x = []
+        pos_y = []
+        for i in range(2, self.city_count, 3):
+            pos_x.append(data[i])
+            pos_y.append(data[i + 1])
 
-        city_count = numbers[0]
-        cities = []  # 도시 좌표(x, y)
+        self.distance = []
+        for i in range(self.city_count):
+            self.distance.append([])
+            for j in range(self.city_count):
+                self.distance[i].append(0)
 
-        for i in range(2, len(numbers), 3):
-            coord = (numbers[i], numbers[i + 1])  # 각 도시의 x축,y축를 튜플로 변환
-            cities.append(coord)  # 각 도시의 좌표를 (x,y)형식으로 저장
+        for i in range(self.city_count - 1):
+            for j in range(i + 1, self.city_count):
+                self.distance[i][j] = int(math.sqrt((pos_x[i] - pos_x[j]) ** 2 + (pos_y[i] - pos_y[j]) ** 2))
+                self.distance[j][i] = self.distance[i][j]
 
-        # 행렬 생성(city_count * city_count)
-        distance = [[0 for i in range(city_count)] for j in range(city_count)]
+        self.best_value = None
 
-        for i in range((city_count - 1)):
-            for j in range(i + 1, city_count):
-                distance[i][j] = GetDistance(cities[i], cities[j])  # i번째 x축과 j번째 y축을 얻어와 거리 계산
-                distance[j][i] = distance[i][j]  # 행렬 밑부분
+    def FitnessFunction(self, chromosome):
+        global best_value
 
-        self.n = city_count  # 20개의 변수 존재
-        self.max_exe_time = 600  # 최대 수행 시간 30초
-        self.distance = distance
-    def GetInitialSolution(self):
-        # n개의 무작위 0 또는 0의 값을 갖는 리스트 생성
-        solution = list(range(self.n))
-        random.shuffle(solution)
-        return solution, self.ObjectiveFunction(solution)
+        tour = chromosome.getInternalList()
 
-    def GetANeighbor(self, state):
-        neighbor = copy.copy(state)
-        # 무작위 위치 2개를 선택하여 스왑
-        pos1 = random.randint(0, self.n - 1)
-        pos2 = random.randint(0, self.n - 1)
-        neighbor[pos1], neighbor[pos2] = neighbor[pos2], neighbor[pos1]
-        obj_value = self.ObjectiveFunction(neighbor)
+        sum_distance = self.distance[0][tour[0]]
+        for i in range(len(tour) - 1):
+            sum_distance += self.distance[tour[i]][tour[i + 1]]
+        sum_distance += self.distance[tour[len(tour) - 1]][0]
 
-        return neighbor, obj_value
+        if best_value == None or sum_distance < best_value:
+            best_value = sum_distance
 
-    def ObjectiveFunction(self, state):
-        # 순회외판원문제의 목적함수인 경로 길이 계산
-        path_len = 0
-        for i in range(self.n - 1):
-            path_len += self.distance[state[i]][state[i + 1]]
-        path_len += self.distance[state[-1]][state[0]]  # 마지막 도시에서 시작도시로 되돌아가는 거리 추가
-        return path_len
+        return sum_distance
 
-problem = Problem()
+tsp = Problem()
+best_value = None
 
-# start_time으로부터 max_time이 경과하였는지 검사
-def TimeOver(start_time, max_time):
-    elapsed = (datetime.datetime.now() - start_time).total_seconds()
-    return True if elapsed >= max_time else False
+def main():
+    genome = G1DList.G1DList(tsp.city_count - 1)
+    genome.evaluator.set(tsp.FitnessFunction)
+    genome.setParams(rangemin=1, rangemax=tsp.city_count - 1)
+    genome.initializator.set(Initializators.G1DListInitializatorOrder)
+    genome.crossover.set(Crossovers.G1DListCrossoverPMX)
+    genome.mutator.set(Mutators.G1DListMutatorSwap)
 
-# 온도(T) 스케줄링 함수
-def Schedule(T):
-    T = T * 0.999
-    if T < 0.00001:
-        T = 0.00001
-    return T
+    ga = GSimpleGA.GSimpleGA(genome)
+    ga.setMinimax(Consts.minimaxType["minimize"])
+    ga.setGenerations(1000)
+    ga.setPopulationSize(100)
+    ga.selector.set(Selectors.GTournamentSelector)
+    ga.setCrossoverRate(0.9)
+    ga.setMutationRate(0.001)
+    ga.setMaxTime(30)       # 수행 시간 제한
 
-# Simulated Annealing
-def SimulatedAnnealing():
-    current, cur_obj_value = problem.GetInitialSolution()
-    best, best_obj_value = current, cur_obj_value
-    print(">>> 초기해 목적 함수값 :", cur_obj_value)
-    print(">>> 초기해 :", current)
-    start_time = datetime.datetime.now()        # 탐색 시작 시간 저장
+    pop = ga.getPopulation()
+    pop.scaleMethod.set(Scaling.SigmaTruncScaling)
 
-    T = 10
+    ga.evolve(freq_stats = 10)
+    print(ga.bestIndividual())
+    print("최단 거리 :", best_value)
 
-    while True:
-        neighbor, neigbor_obj_value = problem.GetANeighbor(current)
-        if neigbor_obj_value < cur_obj_value:
-            current, cur_obj_value = neighbor, neigbor_obj_value
-            print(f"{cur_obj_value}, {T}")
-            if cur_obj_value < best_obj_value:
-                best, best_obj_value = current, cur_obj_value
-        else:
-            deltaE = cur_obj_value - neigbor_obj_value
-            move_probability = math.exp(deltaE / T)
-            if random.random() > move_probability:
-                current, cur_obj_value = neighbor, neigbor_obj_value
-                print(f"{cur_obj_value}, {T}")
-
-        T = Schedule(T)
-
-        if TimeOver(start_time, problem.max_exe_time):
-            print("실행 시간 초과")
-            break
-
-    return best, best_obj_value
-
-best_solution, best_obj_value = SimulatedAnnealing()
-print(">>> Best 목적 함수값 :", best_obj_value)
-print(">>> Best 해 :", best_solution)
+main()
