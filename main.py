@@ -1,112 +1,53 @@
-import random
-import copy
-import datetime
-import math
+import numpy as np
+import tensorflow as tf
+from tensorflow import keras
+from tensorflow.keras.layers import Dense, Flatten
+import time
 
-# One Max Problem : 20개의 변수(0 또는 1의 값을 가짐)들의 합을 최대화
-class Problem:
+class MyCallback(tf.keras.callbacks.Callback):
     def __init__(self):
-        infile = open("tsp299.txt", "r")
-        data = infile.read().split()
-        data = [eval(x) for x in data]
-        self.city_count = data[0]  # 5 [0, 1, 2, 3, 도시가 개라면 도시 번호는 4]
-        data.pop(0)
-        pos_x = []
-        pos_y = []
-        for i in range(0, self.city_count * 3, 3):
-            pos_x.append(data[i + 1])
-            pos_y.append(data[i + 2])
-        self.distance = []
-        for i in range(self.city_count):
-            self.distance.append([])
-            for j in range(self.city_count):
-                self.distance[i].append(0)
-        for i in range(self.city_count - 1):
-            for j in range(i + 1, self.city_count):
-                self.distance[i][j] = int(math.sqrt((pos_x[i] - pos_x[j]) ** 2 + (pos_y[i] - pos_y[j]) ** 2))
-                self.distance[j][i] = self.distance[i][j]
-        self.max_exe_time = 600  # 최대 수행 시간 30초
+        super().__init__()
+        self.start_time = time.time()
 
-    def Swap(self, state, i, j):
-        # 주어진 순열에서 i번째와 j번째 요소를 교환한 새로운 순열 생성
-        neighbor = copy.copy(state)
-        neighbor[i], neighbor[j] = neighbor[j], neighbor[i]
-        return neighbor
+    def on_epoch_end(self, epoch, logs=None):
+        if time.time() - self.start_time > 300:
+            self.model.stop_training = True
 
-    def GetInitialSolution(self):
-        # 0부터 n-1까지의 순열 생성
-        solution = list(range(self.city_count))
-        random.shuffle(solution)
-        return solution, self.ObjectiveFunction(solution)
+mnist = tf.keras.datasets.mnist
+(x_train, y_train_origin), (x_test, y_test_origin) = mnist.load_data()
+x_train, x_test = x_train / 255.0, x_test / 255.0           # 이미지 데이터를 0과 1 사이의 값으로 정규화
 
-    def GetHighestValuedNeighbor(self, state, tabu_list, best_obj_value):
-        highest_solutions = []
-        highest_value = math.inf
+nb_classes = 10
+y_train = keras.utils.to_categorical(y_train_origin, num_classes=nb_classes)       # 레이블 데이터를 one-hot 인코딩
+y_test = keras.utils.to_categorical(y_test_origin, num_classes=nb_classes)       # 레이블 데이터를 one-hot 인코딩
 
-        for i in range(self.city_count - 1):
-            for j in range(1 + i, self.city_count):
-                neighbor = self.Swap(state, i, j)
-                obj_value = self.ObjectiveFunction(neighbor)
-                # tabu_list에 없거나 aspiration 기준(best보다 좋음)을 만족한다면
-                if tabu_list[i][j] == 0 or obj_value < best_obj_value:
-                    if obj_value < highest_value:
-                        highest_solutions = [[copy.copy(neighbor), i, j]]
-                        highest_value = obj_value
-                    elif obj_value == highest_value:
-                        highest_solutions.append([copy.copy(neighbor), i, j])
+model = keras.Sequential()             # 순차 모델 생성
+model.add(Flatten(input_shape=(28, 28)))       # 28x28 이미지를 1차원으로 평탄화
+model.add(Dense(128, activation='sigmoid'))     # 128개의 뉴런을 가진 은닉층 추가, 활성화 함수는 시그모이드
+model.add(Dense(10, activation='softmax'))     # 10개의 뉴런을 가진 출력층 추가, 활성화 함수는 소프트맥스
 
-        return_solution = random.choice(highest_solutions)
-        return return_solution[0], highest_value, return_solution[1], return_solution[2]
+model.compile(optimizer=keras.optimizers.SGD(learning_rate=0.01), loss='mse', metrics=['categorical_accuracy'])
+# model.compile(optimizer=keras.optimizers.Adam(learning_rate=0.01), loss='categorical_crossentropy', metrics=['categorical_accuracy'])
+# 모델의 컴파일 설정. 옵티마이저로 SGD 사용, 학습률은 0.01. 손실 함수는 평균 제곱 오차, 평가 지표로 정확도를 사용
 
-    def ObjectiveFunction(self, state):
-        # 주어진 순열에 대한 비용 계산SS
-        cost = 0
-        for i in range(self.city_count - 1):
-            cost += self.distance[state[i]][state[i+1]]
-        cost += self.distance[state[self.city_count-1]][state[0]]
-        return cost
+hist = model.fit(x_train, y_train, epochs=300, batch_size=100, validation_data=(x_test, y_test), callbacks=[MyCallback()])
+# 모델을 훈련 데이터로 학습시킴. 에포크 수는 300, 배치 크기는 100. 검증 데이터를 사용하여 모델의 성능을 평가. MyCallback 클래스를 콜백으로 사용하여 학습 시간 제한 설정
 
+model.evaluate(x_test, y_test)       # 모델을 테스트 데이터로 평가
 
-problem = Problem()
+y_new = model.predict(x_test)       # 모델을 사용하여 테스트 데이터에 대한 예측 수행
+print(y_new)       # 예측 결과 출력
+y_label = tf.argmax(y_new, axis=1)     # 예측된 결과에서 가장 높은 확률을 가진 클래스의 인덱스 추출
+print(y_label.numpy())       # 추출된 인덱스 출력
 
+# 검증
+total_count = len(y_label)       # 전체 개수 계산
+correct_count = 0       # 맞춘 개수 초기화
+for i in range(len(y_label)):
+    if y_label[i] == y_test_origin[i]:     # 예측한 클래스와 실제 클래스 비교
+        correct_count += 1       # 일치하는 경우 정답 개수 증가
+print("총 개수:", total_count, "맞춘 개수:", correct_count, "정확도:", correct_count / total_count)
+# 전체 개수, 맞춘 개수, 정확도 출력
 
-# start_time으로부터 max_time이 경과하였는지 검사
-def TimeOver(start_time, max_time):
-    elapsed = (datetime.datetime.now() - start_time).total_seconds()
-    return True if elapsed >= max_time else False
-
-
-# Tabu Search
-def TabuSearch():
-    tabu_list = [[0 for j in range(problem.city_count)] for i in range(problem.city_count)]
-    current, cur_obj_value = problem.GetInitialSolution()
-    best, best_obj_value = current, cur_obj_value
-    print(">>> 초기해 목적 함수값 :", cur_obj_value)
-    print(">>> 초기해 :", current)
-    start_time = datetime.datetime.now()  # 탐색 시작 시간 저장
-
-    while True:
-        neighbor, neigbor_obj_value, i, j = problem.GetHighestValuedNeighbor(current, tabu_list, best_obj_value)
-        current, cur_obj_value = neighbor, neigbor_obj_value
-        print(cur_obj_value)
-        if cur_obj_value < best_obj_value:
-            best, best_obj_value = current, cur_obj_value
-
-        for i in range(problem.city_count):
-            for j in range(problem.city_count):
-                tabu_list[i][j] = max(0, tabu_list[i][j] - 1)
-                if i == j:
-                    continue
-                if [i, j] in [[ii, jj] for ii, jj in enumerate(best)]:
-                    tabu_list[i][j] = 3
-
-        if TimeOver(start_time, problem.max_exe_time):
-            print("실행 시간 초과")
-            break
-
-    return best, best_obj_value
-
-
-best_solution, best_obj_value = TabuSearch()
-print(">>> Best 목적 함수값 :", best_obj_value)
-print(">>> Best 해 :", best_solution)
+print(hist.history["val_categorical_accuracy"])       # 검증 데이터에 대한 정확도 기록 출력
+print(">>> 최대값:", max(hist.history["val_categorical_accuracy"]))       # 검증 데이터의 정확도 중 최대값 출력
