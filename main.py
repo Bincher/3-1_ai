@@ -23,7 +23,7 @@ y_test = keras.utils.to_categorical(y_test_origin, num_classes=nb_classes)      
 
 model = keras.Sequential()             # 순차 모델 생성
 model.add(Flatten(input_shape=(28, 28)))       # 28x28 이미지를 1차원으로 평탄화
-model.add(Dense(128, activation='sigmoid'))     # 128개의 뉴런을 가진 은닉층 추가, 활성화 함수는 시그모이드
+model.add(Dense(128, activation='relu'))     # 128개의 뉴런을 가진 은닉층 추가, 활성화 함수는 relu
 model.add(Dense(10, activation='softmax'))     # 10개의 뉴런을 가진 출력층 추가, 활성화 함수는 소프트맥스
 
 model.compile(optimizer=keras.optimizers.SGD(learning_rate=0.01), loss='mse', metrics=['categorical_accuracy'])
