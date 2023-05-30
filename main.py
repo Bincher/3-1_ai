@@ -39,12 +39,12 @@ model.add(MaxPooling2D(pool_size=(2, 2)))
 # 2x2 크기의 맥스 풀링 레이어 추가
 model.add(Flatten())
 # 다차원 입력을 1차원으로 평탄화
-model.add(Dense(128, activation='relu'))
-# 128개의 뉴런을 가진 은닉층 추가, 활성화 함수는 ReLU
+model.add(Dense(128, activation='sigmoid'))
+# 128개의 뉴런을 가진 은닉층 추가, 활성화 함수는 sigmoid
 model.add(Dense(10, activation='softmax'))
 # 10개의 뉴런을 가진 출력층 추가, 활성화 함수는 소프트맥스
 
-model.compile(optimizer=keras.optimizers.SGD(learning_rate=0.1), loss='mse', metrics=['categorical_accuracy'])
+model.compile(optimizer=keras.optimizers.SGD(learning_rate=0.1), loss='categorical_crossentropy', metrics=['categorical_accuracy'])
 # 모델의 컴파일 설정. 옵티마이저로 SGD 사용, 학습률은 0.1. 손실 함수는 평균 제곱 오차, 평가 지표로 정확도를 사용
 
 callback = MyCallback()  # 시간 제한 콜백 객체 생성
