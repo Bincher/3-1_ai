@@ -39,7 +39,7 @@ model.add(MaxPooling2D(pool_size=(2, 2)))
 # 2x2 크기의 맥스 풀링 레이어 추가
 model.add(Flatten())
 # 다차원 입력을 1차원으로 평탄화
-model.add(Dense(128, activation='sigmoid'))
+model.add(Dense(128, activation='relu'))
 # 128개의 뉴런을 가진 은닉층 추가, 활성화 함수는 ReLU
 model.add(Dense(10, activation='softmax'))
 # 10개의 뉴런을 가진 출력층 추가, 활성화 함수는 소프트맥스
