@@ -29,12 +29,12 @@ print(y_test_origin)  # 테스트 데이터의 실제 출력 값 출력
 print(y_test)  # 테스트 데이터의 one-hot 인코딩된 출력 값 출력
 
 model = keras.Sequential()
-model.add(Conv2D(32, (3, 3), activation='relu', input_shape=(28, 28, 1)))
-# 32개의 필터를 가진 3x3 컨볼루션 레이어 추가, 활성화 함수는 ReLU
+model.add(Conv2D(32, (3, 3), activation='sigmoid', input_shape=(28, 28, 1)))
+# 32개의 필터를 가진 3x3 컨볼루션 레이어 추가, 활성화 함수는 sigmoid
 model.add(MaxPooling2D(pool_size=(2, 2)))
 # 2x2 크기의 맥스 풀링 레이어 추가
-model.add(Conv2D(32, (3, 3), activation='relu'))
-# 32개의 필터를 가진 3x3 컨볼루션 레이어 추가, 활성화 함수는 ReLU
+model.add(Conv2D(32, (3, 3), activation='sigmoid'))
+# 32개의 필터를 가진 3x3 컨볼루션 레이어 추가, 활성화 함수는 sigmoid
 model.add(MaxPooling2D(pool_size=(2, 2)))
 # 2x2 크기의 맥스 풀링 레이어 추가
 model.add(Flatten())
