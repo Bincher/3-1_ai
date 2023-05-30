@@ -9,7 +9,7 @@ class MyCallback(tf.keras.callbacks.Callback):
         self.start_time = time.time()
 
     def on_epoch_end(self, epoch, logs=None):
-        if time.time() - self.start_time > 180:
+        if time.time() - self.start_time > 300:
             self.model.stop_training = True
 
 mnist = tf.keras.datasets.mnist
@@ -29,12 +29,12 @@ print(y_test_origin)  # 테스트 데이터의 실제 출력 값 출력
 print(y_test)  # 테스트 데이터의 one-hot 인코딩된 출력 값 출력
 
 model = keras.Sequential()
-model.add(Conv2D(32, (3, 3), activation='sigmoid', input_shape=(28, 28, 1)))
-# 32개의 필터를 가진 3x3 컨볼루션 레이어 추가, 활성화 함수는 sigmoid
+model.add(Conv2D(32, (3, 3), activation='relu', input_shape=(28, 28, 1)))
+# 32개의 필터를 가진 3x3 컨볼루션 레이어 추가, 활성화 함수는 ReLU
 model.add(MaxPooling2D(pool_size=(2, 2)))
 # 2x2 크기의 맥스 풀링 레이어 추가
-model.add(Conv2D(32, (3, 3), activation='sigmoid'))
-# 32개의 필터를 가진 3x3 컨볼루션 레이어 추가, 활성화 함수는 sigmoid
+model.add(Conv2D(32, (3, 3), activation='relu'))
+# 32개의 필터를 가진 3x3 컨볼루션 레이어 추가, 활성화 함수는 ReLU
 model.add(MaxPooling2D(pool_size=(2, 2)))
 # 2x2 크기의 맥스 풀링 레이어 추가
 model.add(Flatten())
@@ -44,7 +44,7 @@ model.add(Dense(128, activation='relu'))
 model.add(Dense(10, activation='softmax'))
 # 10개의 뉴런을 가진 출력층 추가, 활성화 함수는 소프트맥스
 
-model.compile(optimizer=keras.optimizers.SGD(learning_rate=0.1), loss='mse', metrics=['categorical_accuracy'])
+model.compile(optimizer=keras.optimizers.SGD(learning_rate=0.01), loss='mse', metrics=['categorical_accuracy'])
 # 모델의 컴파일 설정. 옵티마이저로 SGD 사용, 학습률은 0.1. 손실 함수는 평균 제곱 오차, 평가 지표로 정확도를 사용
 
 callback = MyCallback()  # 시간 제한 콜백 객체 생성
